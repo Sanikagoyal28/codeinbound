@@ -1,5 +1,6 @@
 const { Errorhandler } = require("../middleware/errorHandler")
 const Question = require("../models/quesModel")
+const Survey = require("../models/survey")
 const User = require("../models/userModel")
 
 const addQuestion = async (req, res, next) => {
@@ -12,14 +13,14 @@ const addQuestion = async (req, res, next) => {
             text
         })
 
-        return res.status(200).json({ success: true, msg: "Sign in successfully" })
+        return res.status(200).json({ success: true, msg: "Question added" })
     }
     catch (err) {
         return next(new Errorhandler(err))
     }
 }
 
-const Survey = async (req, res, next) => {
+const survey = async (req, res, next) => {
     try {
         const { email } = req.body
 
@@ -28,7 +29,7 @@ const Survey = async (req, res, next) => {
 
         const find_user = await User.findOne({ email: email.toLowerCase() })
 
-        if (find_user && find_user.isCompleted)
+        if (find_user && find_user.is_completed)
             return next(new Errorhandler("You've already responded", 400))
 
         if (!find_user)
@@ -57,23 +58,28 @@ const submit = async (req, res, next) => {
         if (!find_user)
             return next(new Errorhandler("User not found", 400))
 
-        const x = await User.updateOne({ email: email.toLowerCase() }, {
-            "answers.$.rating": answers[0].rating,
-            'answers.text': answers[0].text,
-            'answers.question': answers[0].ques_id
+        // const x = await User.updateOne({ email: email.toLowerCase() }, {
+        //     $set: {
+        //         "answers.$.rating": answers[0].rating,
+        //         "answers.$.text": answers[0].text,
+        //         "answers.$.question": answers[0].ques_id
+        //     }
+        // })
+
+        for (var i = 0; i < answers.length; i++) {
+            await Survey.create({
+                user_id: find_user._id,
+                question: answers[i].ques_id,
+                ans_rating: answers[i].rating,
+                ans_text: answers[i].text
+            })
+        }
+
+        await User.updateOne({ email: email.toLowerCase() }, {
+            is_completed: true
         })
 
-        console.log(x)
-
-        // for (var i = 0; i < answers.length; i++) {
-        //     console.log(answers[i])
-        //     await User.updateOne({ email: email.toLowerCase() }, {
-        //         // 'answers.question': answers[i].ques_id,
-        //         "answers.$.rating": answers[i].rating,
-        //         'answers.text':answers[i].text
-        //     })
-        // }
-        return res.status(201).json({ success: true })
+        return res.status(201).json({ success: true, msg: "Your Response has been recorded" })
 
     }
     catch (err) {
@@ -83,7 +89,7 @@ const submit = async (req, res, next) => {
 
 
 module.exports = {
-    Survey,
+    survey,
     addQuestion,
     submit
 }

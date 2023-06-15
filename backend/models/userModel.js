@@ -6,21 +6,9 @@ const userSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    isCompleted: {
+    is_completed: {
         type: Boolean
-    },
-    answers: [{
-        question: {
-            type: ObjectId,
-            ref: 'question'
-        },
-        rating: {
-            type: Number
-        },
-        text:{
-            type:String
-        }
-    }]
+    }
 })
 
 module.exports = mongoose.model("user", userSchema)
